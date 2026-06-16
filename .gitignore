@@ -1,0 +1,133 @@
+# ============================================================
+# Diff-Drive-Simulation-And-Analysis
+# ============================================================
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Compiled extensions
+*.so
+*.pyd
+*.dll
+
+# Distribution / packaging
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+wheels/
+
+*.egg-info/
+*.egg
+
+pip-wheel-metadata/
+
+# Editable installs
+*.pth
+
+# Virtual environments
+env/
+venv/
+.venv/
+ENV/
+.virtualenv/
+
+# Pytest
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Type checkers
+.mypy_cache/
+.pyre/
+.pytype/
+
+# Ruff
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# ============================================================
+# Experiment Outputs
+# ============================================================
+
+outputs/
+outputs_smoke/
+
+# Generated reports
+*.svg
+*.pdf
+
+# Generated plots
+*.png
+*.jpg
+*.jpeg
+
+# Generated experiment CSVs
+*.csv
+
+# ============================================================
+# Exceptions
+# ============================================================
+
+# Keep documentation assets
+!docs/**/*.png
+!docs/**/*.jpg
+!docs/**/*.jpeg
+!docs/**/*.svg
+
+# Keep repository screenshots used in README
+!assets/**/*.png
+!assets/**/*.jpg
+!assets/**/*.jpeg
+!assets/**/*.svg
+
+# Keep intentionally tracked example datasets
+!examples/**/*.csv
+
+# ============================================================
+# Packaging
+# ============================================================
+
+*.manifest
+*.spec
+
+# ============================================================
+# Testing
+# ============================================================
+
+.cache/
+
+# ============================================================
+# Local environment files
+# ============================================================
+
+.env
+.env.*
+.python-version

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "differential-drive-sandbox"
+version = "0.1.0"
+description = "A lightweight research sandbox for differential-drive robot simulation, control, and benchmarking."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Differential Drive Sandbox" }]
+dependencies = []
+
+[project.optional-dependencies]
+viz = ["matplotlib>=3.7"]
+test = ["pytest>=8"]
+
+[project.scripts]
+dds-experiment = "differential_drive_sandbox.experiments.runner:main"
+dds-visualize = "differential_drive_sandbox.visualization.csv_visualizer:main"
+
+[tool.setuptools.packages.find]
+include = ["differential_drive_sandbox*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
