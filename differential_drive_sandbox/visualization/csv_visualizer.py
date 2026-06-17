@@ -31,6 +31,7 @@ class TrajectoryRow:
 class CsvDashboard:
     metrics: list[MetricsRow]
     trajectories: dict[str, list[TrajectoryRow]]
+    reference_path: list[tuple[float, float]] | None = None
 
     @property
     def run_count(self) -> int:
@@ -48,9 +49,11 @@ def build_dashboard(input_dir: str | Path) -> CsvDashboard:
         path.stem: _read_trajectory(path)
         for path in sorted(directory.glob("trajectory_run_*.csv"), key=_trajectory_sort_key)
     }
+    reference_path_file = directory / "path_reference.csv"
+    reference_path = _read_reference_path(reference_path_file) if reference_path_file.exists() else None
     if not metrics and not trajectories:
         raise ValueError(f"no metrics.csv or trajectory_run_*.csv files found in {directory}")
-    return CsvDashboard(metrics=metrics, trajectories=trajectories)
+    return CsvDashboard(metrics=metrics, trajectories=trajectories, reference_path=reference_path)
 
 
 def write_dashboard(input_dir: str | Path, output_path: str | Path | None = None) -> Path:
@@ -65,7 +68,7 @@ def write_dashboard(input_dir: str | Path, output_path: str | Path | None = None
 def render_dashboard(dashboard: CsvDashboard, source_dir: Path) -> str:
     metrics_cards = _render_metric_cards(dashboard.metrics)
     metrics_table = _render_metrics_table(dashboard.metrics)
-    trajectory_svg = _render_trajectory_svg(dashboard.trajectories)
+    trajectory_svg = _render_trajectory_svg(dashboard.trajectories, dashboard.reference_path)
     time_series = _render_time_series(dashboard.trajectories)
     run_cards = _render_run_cards(dashboard.trajectories)
     return f"""<!doctype html>
@@ -235,15 +238,17 @@ def _render_run_cards(trajectories: dict[str, list[TrajectoryRow]]) -> str:
     return f'<div class="run-list">{"".join(cards)}</div>'
 
 
-def _render_trajectory_svg(trajectories: dict[str, list[TrajectoryRow]]) -> str:
+def _render_trajectory_svg(trajectories: dict[str, list[TrajectoryRow]], reference_path: list[tuple[float, float]] | None = None) -> str:
     points_by_run = {
         name: [(row.x, row.y) for row in rows]
         for name, rows in trajectories.items()
         if rows
     }
+    if reference_path:
+        points_by_run["reference path"] = reference_path
     if not points_by_run:
         return '<p class="muted">No trajectory data available.</p>'
-    return _polyline_svg(points_by_run, width=760, height=420, x_label="x [m]", y_label="y [m]")
+    return _polyline_svg(points_by_run, width=760, height=420, x_label="x [m]", y_label="y [m]", reference_key="reference path" if reference_path else None)
 
 
 def _render_time_series(trajectories: dict[str, list[TrajectoryRow]]) -> str:
@@ -255,6 +260,11 @@ def _render_time_series(trajectories: dict[str, list[TrajectoryRow]]) -> str:
     if not series:
         return '<p class="muted">No time-series data available.</p>'
     return _polyline_svg(series, width=1040, height=360, x_label="time [s]", y_label="theta [rad]")
+
+
+def _read_reference_path(path: Path) -> list[tuple[float, float]]:
+    with path.open(newline="", encoding="utf-8") as handle:
+        return [(float(row["x"]), float(row["y"])) for row in csv.DictReader(handle)]
 
 
 def _render_legend(trajectories: dict[str, list[TrajectoryRow]]) -> str:
@@ -270,6 +280,7 @@ def _polyline_svg(
     height: int,
     x_label: str,
     y_label: str,
+    reference_key: str | None = None,
 ) -> str:
     margin = 46
     all_points = [point for points in series.values() for point in points]
@@ -284,9 +295,12 @@ def _polyline_svg(
 
     grid = _grid_lines(width, height, margin)
     paths = []
-    for index, (_, points) in enumerate(series.items()):
+    for index, (name, points) in enumerate(series.items()):
         coords = " ".join(f"{sx(x):.2f},{sy(y):.2f}" for x, y in points)
-        paths.append(f'<polyline points="{coords}" fill="none" stroke="{_color(index)}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" />')
+        is_reference = name == reference_key
+        style = 'stroke-dasharray="5,5"' if is_reference else ""
+        stroke_width = "1.8" if is_reference else "2.4"
+        paths.append(f'<polyline points="{coords}" fill="none" stroke="{_color(index)}" stroke-width="{stroke_width}" stroke-linejoin="round" stroke-linecap="round" {style} />')
     return f"""<svg viewBox="0 0 {width} {height}" role="img" aria-label="{escape(y_label)} by {escape(x_label)}">
       <rect x="0" y="0" width="{width}" height="{height}" rx="8" fill="#fbfcff" />
       {grid}

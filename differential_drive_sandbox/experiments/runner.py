@@ -12,7 +12,6 @@ from differential_drive_sandbox.noise import NoiseConfig, NoiseModel
 from differential_drive_sandbox.paths import named_path
 from differential_drive_sandbox.robot import DifferentialDriveRobot, RobotState
 from differential_drive_sandbox.simulation import SimulationConfig, SimulationEngine, TrajectorySample
-from differential_drive_sandbox.visualization.plotting import plot_trajectory
 
 
 @dataclass(frozen=True)
@@ -21,12 +20,11 @@ class ExperimentConfig:
     path: str = "straight"
     noise: str = "none"
     runs: int = 1
-    duration: float = 20.0
+    duration: float = 50.0
     dt: float = 0.02
     integrator: str = "rk4"
     output_dir: Path = Path("outputs")
     seed: int = 7
-    plot: bool = False
 
 
 def run_experiment(config: ExperimentConfig) -> list[TrackingMetrics]:
@@ -49,10 +47,9 @@ def run_experiment(config: ExperimentConfig) -> list[TrackingMetrics]:
         last_samples = samples
         _write_trajectory_csv(config.output_dir / f"trajectory_run_{run_index + 1}.csv", samples)
 
+    _write_reference_path_csv(config.output_dir / "path_reference.csv", path)
     _write_metrics_csv(config.output_dir / "metrics.csv", metrics)
     _write_summary(config.output_dir / "summary.md", config, metrics)
-    if config.plot and last_samples:
-        plot_trajectory(last_samples, path, config.output_dir / "trajectory.png")
     return metrics
 
 
@@ -67,7 +64,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--integrator", default="rk4", choices=["euler", "rk4"])
     parser.add_argument("--output-dir", type=Path, default=Path("outputs"))
     parser.add_argument("--seed", type=int, default=7)
-    parser.add_argument("--plot", action="store_true")
     args = parser.parse_args(argv)
 
     config = ExperimentConfig(
@@ -80,7 +76,6 @@ def main(argv: list[str] | None = None) -> int:
         integrator=args.integrator,
         output_dir=args.output_dir,
         seed=args.seed,
-        plot=args.plot,
     )
     metrics = run_experiment(config)
     print(f"completed {len(metrics)} run(s); mean RMS error={mean(m.rms_error for m in metrics):.4f} m")
@@ -129,6 +124,14 @@ def _write_trajectory_csv(path: Path, samples: list[TrajectorySample]) -> None:
                     "angular": sample.command.angular,
                 }
             )
+
+
+def _write_reference_path_csv(path: Path, waypoints: list[tuple[float, float]]) -> None:
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["x", "y"])
+        writer.writeheader()
+        for x, y in waypoints:
+            writer.writerow({"x": x, "y": y})
 
 
 def _write_summary(path: Path, config: ExperimentConfig, metrics: list[TrackingMetrics]) -> None:

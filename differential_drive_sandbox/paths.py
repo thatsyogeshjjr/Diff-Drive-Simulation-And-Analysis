@@ -9,14 +9,14 @@ def straight_line(length: float = 5.0, points: int = 50) -> list[Point]:
     return [(length * i / (points - 1), 0.0) for i in range(points)]
 
 
-def circle(radius: float = 2.0, points: int = 120) -> list[Point]:
+def circle(radius: float = 2.0, points: int = 500) -> list[Point]:
     return [
         (radius * cos(2.0 * pi * i / (points - 1)), radius * sin(2.0 * pi * i / (points - 1)))
         for i in range(points)
     ]
 
 
-def figure_eight(radius: float = 2.0, points: int = 160) -> list[Point]:
+def figure_eight(radius: float = 2.0, points: int = 800) -> list[Point]:
     return [
         (
             radius * sin(2.0 * pi * i / (points - 1)),

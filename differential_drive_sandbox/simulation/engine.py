@@ -4,7 +4,12 @@ from dataclasses import dataclass
 from typing import Callable, Iterable
 
 from differential_drive_sandbox.integrators import euler_step, rk4_step
-from differential_drive_sandbox.kinematics import BodyVelocity, WheelVelocity, forward_kinematics
+from differential_drive_sandbox.kinematics import (
+    BodyVelocity,
+    WheelVelocity,
+    forward_kinematics,
+    inverse_kinematics,
+)
 from differential_drive_sandbox.noise import NoiseModel
 from differential_drive_sandbox.robot.model import DifferentialDriveRobot, RobotState
 
@@ -14,7 +19,7 @@ Controller = Callable[[RobotState, float], BodyVelocity | WheelVelocity]
 @dataclass(frozen=True)
 class SimulationConfig:
     dt: float = 0.02
-    duration: float = 10.0
+    duration: float = 50.0
     integrator: str = "rk4"
 
     def __post_init__(self) -> None:
@@ -72,6 +77,8 @@ class SimulationEngine:
 
     def _to_body_velocity(self, command: BodyVelocity | WheelVelocity) -> BodyVelocity:
         if isinstance(command, BodyVelocity):
-            return command
+            wheels = inverse_kinematics(command, self.robot.params)
+            noisy_wheels = self.noise_model.apply_wheel_noise(wheels, self.robot.params)
+            return forward_kinematics(noisy_wheels, self.robot.params)
         noisy_wheels = self.noise_model.apply_wheel_noise(command, self.robot.params)
         return forward_kinematics(noisy_wheels, self.robot.params)
